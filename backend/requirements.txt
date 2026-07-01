@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+python-multipart
+Pillow
+groq
+google-generativeai
+langchain
+langchain-core
+langchain-groq
+langchain-huggingface
+langchain-community
+chromadb
+sentence-transformers
+torch
