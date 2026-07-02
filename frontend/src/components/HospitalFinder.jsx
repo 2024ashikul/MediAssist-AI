@@ -9,48 +9,63 @@ export default function HospitalFinder({ language }) {
 
   function search() {
     const specEn = specialist.split('(').pop().replace(')', '').trim()
-    const mapsUrl = `https://www.google.com/maps/search/${specEn}+hospital+near+${district}+Bangladesh`.replace(
-      / /g,
-      '+'
-    )
+    const mapsUrl = `https://www.google.com/maps/search/${specEn}+hospital+near+${district}+Bangladesh`.replace(/ /g, '+')
     setResult({ district, specialist, mapsUrl })
   }
 
   return (
-    <div className="hospital-finder">
-      <label className="field-label">{t.selectDistrict}</label>
-      <select value={district} onChange={(e) => setDistrict(e.target.value)}>
-        {bangladeshDistricts.map((d) => (
-          <option key={d} value={d}>
-            {d}
-          </option>
-        ))}
-      </select>
+    <div className="grid md:grid-cols-2 gap-6 max-w-3xl">
+      <div className="bg-white border border-brand-100 rounded-2xl p-6 shadow-soft">
+        <h3 className="font-display text-lg text-brand-900 mb-4">🏥 {t.hospitalFinder}</h3>
 
-      <label className="field-label">{t.typeOfHelp}</label>
-      <select value={specialist} onChange={(e) => setSpecialist(e.target.value)}>
-        {specialistTypes.map((s) => (
-          <option key={s} value={s}>
-            {s}
-          </option>
-        ))}
-      </select>
+        <label className="text-xs font-semibold text-slate-500">{t.selectDistrict}</label>
+        <select
+          value={district}
+          onChange={(e) => setDistrict(e.target.value)}
+          className="w-full mt-1.5 mb-4 border border-brand-100 rounded-lg px-3 py-2.5 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-200 transition bg-white"
+        >
+          {bangladeshDistricts.map((d) => <option key={d} value={d}>{d}</option>)}
+        </select>
 
-      <button className="btn-primary" onClick={search}>
-        🔍 {t.search}
-      </button>
+        <label className="text-xs font-semibold text-slate-500">{t.typeOfHelp}</label>
+        <select
+          value={specialist}
+          onChange={(e) => setSpecialist(e.target.value)}
+          className="w-full mt-1.5 mb-5 border border-brand-100 rounded-lg px-3 py-2.5 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-200 transition bg-white"
+        >
+          {specialistTypes.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
 
-      {result && (
-        <div className="hospital-result">
-          <p className="confirmed-tag">
-            <strong>{result.district}</strong> — {result.specialist}
-          </p>
-          <a href={result.mapsUrl} target="_blank" rel="noreferrer">
-            🗺️ {t.viewOnMaps}
-          </a>
-          <p className="hint-text">💡 {t.reviewTip}</p>
-        </div>
-      )}
+        <button
+          onClick={search}
+          className="w-full bg-gradient-to-r from-brand-500 to-brand-700 text-white font-semibold rounded-xl py-3 shadow-md shadow-brand-700/25 hover:-translate-y-0.5 transition-transform"
+        >
+          🔍 {t.search}
+        </button>
+      </div>
+
+      <div className="bg-white border border-brand-100 rounded-2xl p-6 shadow-soft flex flex-col justify-center">
+        {result ? (
+          <>
+            <p className="font-semibold text-brand-900 mb-1">{result.district}</p>
+            <p className="text-sm text-slate-500 mb-4">{result.specialist}</p>
+            <a
+              href={result.mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-success-500 font-semibold text-sm mb-3 hover:underline"
+            >
+              🗺️ {t.viewOnMaps}
+            </a>
+            <p className="text-sm text-slate-400">💡 {t.reviewTip}</p>
+          </>
+        ) : (
+          <div className="text-center text-slate-400 py-6">
+            <span className="text-3xl block mb-2">🏥</span>
+            <p className="text-sm">{language === 'bn' ? 'খুঁজতে বাটনে চাপুন' : 'Press search to see results'}</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://ashikulislam2003-mediassistai.hf.space'
 
 async function handle(res) {
   if (!res.ok) {
@@ -75,6 +75,16 @@ export async function extractOcrText(file, language) {
   form.append('language', language)
   const res = await fetch(`${BASE_URL}/api/ocr/extract`, { method: 'POST', body: form })
   return handle(res)
+}
+
+export async function searchMedicine(query) {
+  const res = await fetch(`${BASE_URL}/api/search?${new URLSearchParams({ q: query })}`)
+  return handle(res)  
+}
+
+export async function getMedicineDetail(brandId) {
+  const res = await fetch(`${BASE_URL}/api/medicine/${brandId}`)
+  return handle(res)  // returns MedicineDetail
 }
 
 export async function transcribeVoice(blob, language) {

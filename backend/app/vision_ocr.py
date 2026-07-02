@@ -7,7 +7,7 @@ logger = logging.getLogger("mediassist.vision")
 # NOTE: kept identical to the original app.py. If this model name errors out on
 # your API key, run backend/check_models.py and swap in a valid model id
 # (the project README lists "gemini-2.5-flash" as the intended model).
-GEMINI_MODEL_NAME = "gemini-3.5-flash"
+GEMINI_MODEL_NAME = "gemini-2.5-flash"
 
 _model = None
 
@@ -62,6 +62,7 @@ Date: [if visible]
 
 RULES:
 - Transcribe text exactly as written. Do not correct, complete, or guess illegible medicine names — write "[illegible]" instead.
+- Explicity try to extract Medicine Brand name. Tab. means tablet, try to know short forms and give exact brand name. Write a constructive markdown for that the report becomes nice
 - Do not add any medical advice, warnings, or interpretation of your own.
 - Output language: write field labels and any transcribed advice in {'Bengali' if bangla else 'English'}, but keep medicine names in their original script as written on the prescription."""
         response = model.generate_content([prompt, image])

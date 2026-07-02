@@ -17,4 +17,4 @@ COPY chroma_db ./chroma_db
 
 EXPOSE 8000
 HEALTHCHECK CMD curl --fail http://localhost:8000/api/health || exit 1
-ENTRYPOINT ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]

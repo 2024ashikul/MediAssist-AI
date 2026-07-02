@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 load_dotenv()
-
+from .get_medicine_data import search_brand,get_brand_by_id
 import os
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,7 +14,9 @@ from groq import Groq
 
 from app.models import (
     ChatRequest, ChatResponse, TriageSubmitRequest, TriageSubmitResponse,
-    ImageAnalysisResponse, TranscribeResponse, HealthResponse,
+    ImageAnalysisResponse, TranscribeResponse, HealthResponse,MedicineDetail,
+    MedicineSearchResponse,
+    MedicineSearchResult
 )
 from app.rag_pipeline import RagPipeline
 from app.utils import is_symptom_query, append_context, build_triage_answers_block, generate_triage_questions
@@ -156,6 +158,12 @@ async def ocr_extract(file: UploadFile = File(...), language: str = Form("bn")):
     result = extract_text_gemini(image, bangla=(language == "bn"))
     return ImageAnalysisResponse(result=result, is_error=result.startswith("ERROR"))
 
+@app.post("/api/ocr/extract-medicine-info", response_model=str)
+async def extract_medicine_info(text: str ) -> str:
+    # your processing logic goes here
+    result = text  # placeholder — replace with your actual processing
+
+    return result
 
 # ─── Voice transcription (Groq Whisper) ─────────────────────────────
 @app.post("/api/voice/transcribe", response_model=TranscribeResponse)
@@ -181,3 +189,22 @@ async def voice_transcribe(file: UploadFile = File(...), language: str = Form("b
     except Exception as e:
         logger.exception("Voice transcription failed")
         raise HTTPException(status_code=500, detail=f"Voice processing failed: {e}")
+
+# --- Search for medicine -------#
+@app.get('/api/search',response_model=MedicineSearchResponse)
+async def search(q:str):
+    results = search_brand(q)
+    print(results)
+    return MedicineSearchResponse(
+        query  = q,
+        count = len(results),
+        results = results
+    )
+
+# --- Get specific medicine information -------#
+@app.get('/api/medicine/{brand_id}', response_model=MedicineDetail)
+async def medicine_detail(brand_id: int):
+    result = get_brand_by_id(brand_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Medicine not found")
+    return result
