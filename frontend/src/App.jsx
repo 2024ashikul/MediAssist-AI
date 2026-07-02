@@ -56,6 +56,9 @@ export default function App() {
   const [triage, setTriage] = useState(null) 
   const [pending, setPending] = useState(false)
   const [backendWarning, setBackendWarning] = useState(null)
+  
+  // Track open state for mobile slide-out drawer layout
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   const t = uiStrings[language]
 
@@ -72,8 +75,7 @@ export default function App() {
         }
       })
       .catch(() => setBackendWarning(t.connectionError))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [language, t.connectionError])
 
   function pushAssistantTurn(enrichedInput, answer) {
     setMessages((prev) => [...prev, { role: 'assistant', content: answer }])
@@ -162,7 +164,6 @@ export default function App() {
     }
   }
 
-  // Feature view dispatcher
   function renderFeature() {
     switch (activeView) {
       case 'bmi':
@@ -189,111 +190,170 @@ export default function App() {
   }
 
   const meta = FEATURE_META[activeView]
-  // Extracting the designated Component dynamic reference mapping
   const FeatureIcon = meta?.icon
 
   return (
     <Box 
       sx={{ 
         display: 'flex', 
+        flexDirection: { xs: 'column', lg: 'row' }, 
         height: '100vh', 
+        width: '100vw',
         overflow: 'hidden', 
-        bgcolor: 'background.paper', 
-        color: 'text.primary' 
+        bgcolor: '#f8fafc', // Light slate modern background tint
+        color: 'text.primary',
+        fontFamily: 'Inter, sans-serif'
       }}
     >
+      {/* ========================================== */}
+      {/* GLOBAL MOBILE TOP BAR (HIDDEN ON DESKTOP)  */}
+      {/* ========================================== */}
+      <div className="lg:hidden w-full bg-gradient-to-r from-brand-950 to-brand-900 text-white px-5 py-4 flex items-center justify-between sticky top-0 z-40 shadow-md shrink-0">
+        <div className="flex items-center gap-2.5">
+          <span className="text-xl leading-none">👩🏻‍⚕️</span>
+          <h1 className="font-display font-bold text-base tracking-tight text-white">{t.appName}</h1>
+        </div>
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 focus:outline-none transition-all duration-150"
+          aria-label="Menu"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Main Structural Shared Sidebar Module */}
       <Sidebar
         language={language}
         setLanguage={setLanguage}
         activeView={activeView}
         setActiveView={setActiveView}
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
       />
 
-      <Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      {/* ========================================== */}
+      {/* APPLICATION CORE INTERFACE VIEW CONTENT    */}
+      {/* ========================================== */}
+      <Box 
+        component="main" 
+        sx={{ 
+          flexGrow: 1, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          minWidth: 0,
+          height: '100%',
+          overflow: 'hidden',
+          bgcolor: '#ffffff',
+          boxShadow: { lg: '-4px 0 24px -12px rgba(0,0,0,0.08)' } // Elegant separation line for desktop
+        }}
+      >
         {activeView === 'chat' ? (
           <>
-            {/* Main Chat Interface Header */}
-            <Box sx={{ px: 4, pt: 3, pb: 1.5, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-              <Typography variant="h5" sx={{ fontWeight: 700, tracking: '-0.025em' }}>
+            {/* Main Chat Interface Header (Only shows brand title on Desktop layout) */}
+            <Box sx={{ px: { xs: 3, md: 4 }, pt: 3, pb: 2, borderBottom: 1, borderColor: '#e2e8f0' }}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 700, 
+                  tracking: '-0.025em', 
+                  color: '#0f172a',
+                  display: { xs: 'none', lg: 'block' } // Hidden on mobile because it's already in the top bar
+                }}
+              >
                 👩🏻‍⚕️ {t.appName}
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                {t.askAnything}
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mt: { xs: 0, lg: 0.5 }, 
+                  color: '#64748b', 
+                  fontWeight: 500,
+                  fontSize: { xs: '0.875rem', lg: '0.875rem' }
+                }}
+              >
+                ✨ {t.askAnything}
               </Typography>
             </Box>
 
             {backendWarning && (
-              <Box sx={{ mx: 4, mt: 1.5 }}>
-                <Alert severity="warning" variant="standard">
+              <Box sx={{ mx: { xs: 3, md: 4 }, mt: 2 }}>
+                <Alert severity="warning" variant="outlined" sx={{ borderRadius: '12px', fontWeight: 500 }}>
                   {backendWarning}
                 </Alert>
               </Box>
             )}
 
+            {/* Chat Interface Sub-Modules */}
             <ChatWindow messages={messages} pending={pending} language={language} />
             <ChatInput language={language} onSend={handleSend} disabled={pending || !!triage} />
           </>
         ) : (
-          /* Ancillary Feature Rendering Panels */
-          <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+          /* Ancillary Sub-Feature Render Container Layouts */
+          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <Box 
               sx={{ 
-                px: 4, 
-                pt: 3, 
-                pb: 2, 
+                px: { xs: 3, md: 4 }, 
+                pt: 2.5, 
+                pb: 2.5, 
                 borderBottom: 1, 
-                borderColor: 'divider', 
-                bgcolor: 'background.paper', 
+                borderColor: '#e2e8f0', 
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: 2 
+                justifyContent: 'space-between'
               }}
             >
-              <Avatar 
-                sx={{ 
-                  width: 44, 
-                  height: 44, 
-                  background: 'linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%)',
-                  color: 'slate.700'
-                }}
-              >
-                {/* Dynamically instantiate the registered Lucide component */}
-                {FeatureIcon && <FeatureIcon size={22} strokeWidth={2} />}
-              </Avatar>
-              <Box>
-                <Typography variant="h6" sx={{ fontWeight: 700, tracking: '-0.025em', lineHeight: 1.2 }}>
-                  {t[meta?.titleKey]}
-                </Typography>
-                <Button
-                  variant="text"
-                  size="small"
-                  startIcon={<ArrowLeft size={14} />}
-                  onClick={() => setActiveView('chat')}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar 
                   sx={{ 
-                    p: 0, 
-                    minWidth: 0, 
-                    mt: 0.5, 
-                    textTransform: 'none', 
-                    fontSize: '0.75rem', 
-                    fontWeight: 600,
-                    color: 'primary.main',
-                    '&:hover': { background: 'transparent', textDecoration: 'underline' } 
+                    width: 40, 
+                    height: 40, 
+                    background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                    color: '#2563eb'
                   }}
                 >
-                  {t.navChat}
-                </Button>
+                  {FeatureIcon && <FeatureIcon size={20} strokeWidth={2.5} />}
+                </Avatar>
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0f172a', tracking: '-0.02em', lineHeight: 1.2 }}>
+                    {t[meta?.titleKey]}
+                  </Typography>
+                </Box>
               </Box>
+
+              {/* Dynamic Back to Chat Action Link */}
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<ArrowLeft size={15} />}
+                onClick={() => setActiveView('chat')}
+                sx={{ 
+                  borderRadius: '10px',
+                  textTransform: 'none', 
+                  fontWeight: 600,
+                  boxShadow: 'none',
+                  bgcolor: '#f1f5f9',
+                  color: '#334155',
+                  '&:hover': { bgcolor: '#e2e8f0', boxShadow: 'none' }
+                }}
+              >
+                {t.navChat}
+              </Button>
             </Box>
 
-            <Divider />
-
-            <Container maxWidth="md" sx={{ py: 4 }}>
-              {renderFeature()}
-            </Container>
+            {/* Dynamic Core Sub-Module UI Injections */}
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', py: 4, px: { xs: 2, sm: 3 } }}>
+              <Container maxWidth="md" disableGutters>
+                {renderFeature()}
+              </Container>
+            </Box>
           </Box>
         )}
       </Box>
 
+      {/* Shared Modals Layer */}
       {triage && (
         <TriageModal
           language={language}
