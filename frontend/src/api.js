@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://ashikulislam2003-mediassistai.hf.space'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`
 
 async function handle(res) {
   if (!res.ok) {
@@ -92,5 +92,22 @@ export async function transcribeVoice(blob, language) {
   form.append('file', blob, 'recording.webm')
   form.append('language', language)
   const res = await fetch(`${BASE_URL}/api/voice/transcribe`, { method: 'POST', body: form })
+  return handle(res)
+}
+
+export async function getAiOverview(brandId,language) {
+  console.log(language)
+  const res = await fetch(`${BASE_URL}/api/medicine/ai_overview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ brand_id: brandId , language}),
+  })
+  return handle(res)
+}
+
+export async function getNearbyHospitals(lat, lng, specialist) {
+  const res = await fetch(
+    `${BASE_URL}/api/hospitals/nearby?${new URLSearchParams({ lat, lng, specialist })}`
+  )
   return handle(res)
 }

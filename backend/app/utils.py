@@ -36,7 +36,7 @@ def build_triage_answers_block(questions: List[dict], answers: dict) -> str:
     return "\n".join(lines)
 
 
-def generate_triage_questions(symptom_text: str, groq_client) -> list:
+async def generate_triage_questions(symptom_text: str, groq_client) -> list:
     """Mirrors the triage-question generator from the original Streamlit app."""
     try:
         prompt = f"""Patient said: "{symptom_text}"
@@ -75,3 +75,27 @@ Format: {{"questions":[{{"id":1,"question":"...","options":["A","B","C","D"]}}]}
     except Exception:
         logger.exception("Triage question generation failed")
         return []
+
+async def generate_medicine_overview(medicine_info: str, groq_client,language : str) -> str: 
+    try:
+        prompt = f"""This is the medicine info of a medicine: "{medicine_info}"
+        Please simplify this information for a general audience. Include:
+        - A short overview and what reasons the medicine is used for.
+        - How they should take it (including weight/age instructions if present).
+        - Any side effects.
+        -Generate a simple, easy-to-read text response in markdown.
+        reply in {language}
+        """
+        
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=1000,
+        )
+        
+        return response.choices[0].message.content
+        
+    except Exception as e:
+        print(e)
+        return f"An error occurred while generating the overview"

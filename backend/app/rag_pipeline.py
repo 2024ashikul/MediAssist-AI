@@ -107,9 +107,9 @@ class RagPipeline:
 
         self.contextualize_prompt = ChatPromptTemplate.from_messages([
             ("system",
-             "Given the chat history and the latest user question, reformulate the question "
-             "to be standalone and clear. Reply in the SAME language as the user's input. "
-             "Do NOT answer it, just rephrase if needed. Return as it is if already clear."),
+            "Given the chat history and the latest user question, reformulate the question "
+            "to be standalone and clear. Reply in the SAME language as the user's input. "
+            "Do NOT answer it, just rephrase if needed. Return as it is if already clear."),
             MessagesPlaceholder("chat_history"),
             ("human", "{input}"),
         ])

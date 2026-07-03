@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { searchMedicine, getMedicineDetail } from '../api.js'
+import { searchMedicine, getMedicineDetail, getAiOverview } from '../api.js'
 import { uiStrings } from '../data/staticData.js'
-
+import ReactMarkdown from 'react-markdown'
 // Config for every renderable field on the medicine detail object.
-// `isHtml: true` means the value is trusted raw HTML and is rendered as-is
-// (currently only dosage_description, per backend: it is NOT html-stripped).
-// `warning: true` gives contraindications a red/alert treatment instead of the default style.
 const FIELD_CONFIG = [
   { key: 'indication_description', label: 'Uses', icon: '🎯' },
   { key: 'pharmacology_description', label: 'Pharmacology', icon: '🧬' },
@@ -28,9 +25,8 @@ function CollapsibleSection({ id, icon, label, isHtml, warning, content, isOpen,
     <div className={`border rounded-xl overflow-hidden ${warning ? 'border-coral-500/30' : 'border-brand-100'}`}>
       <button
         onClick={() => onToggle(id)}
-        className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${
-          warning ? 'bg-coral-50 text-coral-600' : 'bg-brand-50/60 hover:bg-brand-50 text-brand-900'
-        }`}
+        className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${warning ? 'bg-coral-50 text-coral-600' : 'bg-brand-50/60 hover:bg-brand-50 text-brand-900'
+          }`}
       >
         <span className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
           <span>{icon}</span> {label}
@@ -62,7 +58,13 @@ export default function MedicineFinder({ language }) {
   const [openSections, setOpenSections] = useState(() => new Set())
   const debounceRef = useRef(null)
 
-  // realtime search-as-you-type
+
+  const [viewMode, setViewMode] = useState('normal')
+  const [aiOverview, setAiOverview] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState(null)
+
+
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     const q = query.trim()
@@ -77,7 +79,7 @@ export default function MedicineFinder({ language }) {
       } catch (e) {
         setSuggestions([])
       }
-    }, 300) // 300ms debounce
+    }, 100)
     return () => clearTimeout(debounceRef.current)
   }, [query])
 
@@ -90,15 +92,23 @@ export default function MedicineFinder({ language }) {
     })
   }
 
+  // Handle standard medicine detail selection
   async function selectMedicine(brandId, brandName) {
     setLoading(true)
     setError(null)
     setDetail(null)
     setSuggestions([])
+
+    // Reset AI states for the fresh selection
+    setViewMode('normal')
+    setAiOverview('')
+    setAiError(null)
+
     try {
       const res = await getMedicineDetail(brandId)
+      console.log(res)
       setDetail(res)
-      // open the first couple of sections that actually have content by default
+
       const defaultOpen = FIELD_CONFIG.filter((f) => res[f.key]).slice(0, 2).map((f) => f.key)
       setOpenSections(new Set(defaultOpen))
       setQuery(brandName)
@@ -109,9 +119,33 @@ export default function MedicineFinder({ language }) {
       setLoading(false)
     }
   }
+  
+  // Fetch and cache AI Summary from the backend endpoint
+
+  async function fetchAiOverview(brandId,language) {
+    if (aiOverview) {
+      setViewMode('ai')
+      return
+    }
+
+    setAiLoading(true)
+    setAiError(null)
+    setViewMode('ai')
+    
+    try {
+      const data = await getAiOverview(brandId,language)
+      setAiOverview(data)
+    } catch (err) {
+      setAiError(err.message || 'Something went wrong while contacting the AI helper.')
+      setViewMode('normal')
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   return (
-    <div className="max-w-2xl relative">
+    // Changed max-w-2xl to max-w-4xl to make the layout wider and stretched
+    <div className="max-w-4xl mx-auto relative w-full">
       <div className="flex gap-2.5 mb-3">
         <input
           type="text"
@@ -123,7 +157,7 @@ export default function MedicineFinder({ language }) {
       </div>
 
       {suggestions.length > 0 && !detail && (
-        <div className="border border-brand-100 rounded-xl overflow-hidden mb-4 divide-y divide-brand-50">
+        <div className="border border-brand-100 rounded-xl overflow-hidden mb-4 divide-y divide-brand-50 bg-white shadow-sm">
           {suggestions.map((s) => (
             <button
               key={s.brand_id}
@@ -161,7 +195,7 @@ export default function MedicineFinder({ language }) {
       )}
 
       {!detail && !loading && !error && suggestions.length === 0 && (
-        <div className="text-center text-slate-400 border border-dashed border-brand-100 rounded-2xl p-10">
+        <div className="text-center text-slate-400 border border-dashed border-brand-100 rounded-2xl p-10 bg-white">
           <span className="text-3xl block mb-2">💊</span>
           <p className="font-semibold text-brand-900 mb-1">{t.medicineEmptyTitle}</p>
           <p className="text-sm">{t.medicineEmptySub}</p>
@@ -170,29 +204,96 @@ export default function MedicineFinder({ language }) {
 
       {detail && !loading && (
         <div className="bg-white border border-brand-100 rounded-2xl p-6 shadow-soft flex flex-col gap-4">
-          <div>
-            <h4 className="font-display text-xl text-brand-900">{detail.brand_name}</h4>
-            <p className="text-sm text-slate-500 mt-0.5">
-              {detail.generic_name} · {detail.strength} · {detail.dosage_form} · {detail.manufacturer}
-            </p>
+
+          {/* Medicine Introduction Header Block */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-slate-50 pb-4">
+            <div>
+              <h4 className="font-display text-2xl font-bold text-brand-900">{detail.brand_name}</h4>
+              <p className="text-sm text-slate-500 mt-1.5">
+                {detail.generic_name} · {detail.strength} · {detail.dosage_form} · {detail.manufacturer}
+              </p>
+            </div>
+
+            {/* Top Right Controls: AI Overview Button & Mode Toggle Toggles */}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              {aiOverview && !aiLoading && (
+                <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-xs font-medium">
+                  <button
+                    onClick={() => setViewMode('normal')}
+                    className={`px-2.5 py-1 rounded-md transition-colors ${viewMode === 'normal' ? 'bg-white text-brand-900 shadow-sm font-semibold' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    Standard
+                  </button>
+                  <button
+                    onClick={() => setViewMode('ai')}
+                    className={`px-2.5 py-1 rounded-md transition-colors ${viewMode === 'ai' ? 'bg-brand-500 text-white shadow-sm font-semibold' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    AI View
+                  </button>
+                </div>
+              )}
+
+              {(!aiOverview || aiLoading) && (
+                <button
+                  onClick={() => fetchAiOverview(detail.brand_id,language)}
+                  disabled={aiLoading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition disabled:opacity-70"
+                >
+                  <span>✨</span> {aiLoading ? 'Analyzing...' : 'AI Overview'}
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2.5">
-            {FIELD_CONFIG.filter((f) => detail[f.key]).map((f) => (
-              <CollapsibleSection
-                key={f.key}
-                id={f.key}
-                icon={f.icon}
-                label={f.label}
-                isHtml={f.isHtml}
-                warning={f.warning}
-                content={detail[f.key]}
-                isOpen={openSections.has(f.key)}
-                onToggle={toggleSection}
-              />
-            ))}
-          </div>
+          {/* AI View Display Mode */}
+          {viewMode === 'ai' && (
+            <div className="bg-purple-50/40 border border-purple-100 rounded-xl p-5 min-h-[150px] transition-all">
+              <div className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-wider mb-3">
+                <span>✨</span> Medicine Summary
+              </div>
 
+              {aiLoading && (
+                <div className="flex flex-col gap-2 py-4 animate-pulse">
+                  <div className="h-4 bg-purple-200/60 rounded w-3/4"></div>
+                  <div className="h-4 bg-purple-200/60 rounded w-5/6"></div>
+                  <div className="h-4 bg-purple-200/60 rounded w-1/2"></div>
+                </div>
+              )}
+
+              {aiError && (
+                <div className="text-sm text-coral-600 bg-coral-50/50 p-3 rounded-lg border border-coral-200">
+                  ⚠️ {aiError}
+                </div>
+              )}
+
+              {!aiLoading && !aiError && aiOverview && (
+                <div className="text-sm text-slate-800 leading-relaxed prose prose-sm max-w-none prose-headings:text-brand-900 prose-strong:text-brand-900">
+                  <ReactMarkdown>{aiOverview}</ReactMarkdown>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Normal View Display Mode (Collapsible Sections) */}
+          {viewMode === 'normal' && (
+            <div className="flex flex-col gap-2.5">
+              {FIELD_CONFIG.filter((f) => detail[f.key]).map((f) => (
+                <CollapsibleSection
+                  key={f.key}
+                  id={f.key}
+                  icon={f.icon}
+                  label={f.label}
+                  isHtml={f.isHtml}
+                  warning={f.warning}
+                  content={detail[f.key]}
+                  isOpen={openSections.has(f.key)}
+                  onToggle={toggleSection}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Disclaimer Notification Footer */}
           <div className="flex gap-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-lg px-3.5 py-3 text-xs leading-relaxed mt-1">
             <span>ℹ️</span>
             <span>

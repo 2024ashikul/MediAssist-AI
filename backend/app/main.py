@@ -1,7 +1,7 @@
 import io
 import logging
 from contextlib import asynccontextmanager
-
+from fastapi import HTTPException, Body
 from dotenv import load_dotenv
 load_dotenv()
 from .get_medicine_data import search_brand,get_brand_by_id
@@ -11,15 +11,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 import google.generativeai as genai
 from groq import Groq
+from fastapi.concurrency import run_in_threadpool
 
 from app.models import (
     ChatRequest, ChatResponse, TriageSubmitRequest, TriageSubmitResponse,
     ImageAnalysisResponse, TranscribeResponse, HealthResponse,MedicineDetail,
     MedicineSearchResponse,
-    MedicineSearchResult
+    MedicineSearchResult, AIOverviewRequest
 )
 from app.rag_pipeline import RagPipeline
-from app.utils import is_symptom_query, append_context, build_triage_answers_block, generate_triage_questions
+from app.utils import is_symptom_query, append_context, build_triage_answers_block, generate_triage_questions,generate_medicine_overview
 from app.vision_ocr import analyze_symptoms_from_image, extract_text_gemini
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -61,7 +62,12 @@ app = FastAPI(title="MediAssist AI API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_ORIGIN, "http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+    FRONTEND_ORIGIN,
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://192.168.0.107:5173",
+],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -109,12 +115,12 @@ def health():
 
 # ─── Chat ───────────────────────────────────────────────────────────
 @app.post("/api/chat", response_model=ChatResponse)
-def chat(req: ChatRequest):
+async def chat(req: ChatRequest):
     rag = _require_rag()
 
     if is_symptom_query(req.message):
         groq_client = _require_groq()
-        questions = generate_triage_questions(req.message, groq_client)
+        questions = await generate_triage_questions(req.message, groq_client)
         if questions:
             return ChatResponse(
                 type="triage",
@@ -128,7 +134,7 @@ def chat(req: ChatRequest):
 
 
 @app.post("/api/chat/triage-submit", response_model=TriageSubmitResponse)
-def triage_submit(req: TriageSubmitRequest):
+async def triage_submit(req: TriageSubmitRequest):
     rag = _require_rag()
 
     enriched = req.original_input
@@ -158,12 +164,6 @@ async def ocr_extract(file: UploadFile = File(...), language: str = Form("bn")):
     result = extract_text_gemini(image, bangla=(language == "bn"))
     return ImageAnalysisResponse(result=result, is_error=result.startswith("ERROR"))
 
-@app.post("/api/ocr/extract-medicine-info", response_model=str)
-async def extract_medicine_info(text: str ) -> str:
-    # your processing logic goes here
-    result = text  # placeholder — replace with your actual processing
-
-    return result
 
 # ─── Voice transcription (Groq Whisper) ─────────────────────────────
 @app.post("/api/voice/transcribe", response_model=TranscribeResponse)
@@ -208,3 +208,50 @@ async def medicine_detail(brand_id: int):
     if result is None:
         raise HTTPException(status_code=404, detail="Medicine not found")
     return result
+
+@app.post('/api/medicine/ai_overview', response_model= str)
+async def medicine_ai_review(payload:AIOverviewRequest):
+    medicine: MedicineDetail = await medicine_detail(payload.brand_id)
+    language : str = payload.language
+
+    print(payload)
+    field_labels = {
+        "brand_name": "Brand Name",
+        "generic_name": "Generic Name",
+        "strength": "Strength",
+        "dosage_form": "Dosage Form",
+        "manufacturer": "Manufacturer",
+        "type": "Type",
+        "indication_description": "Indication",
+        "pharmacology_description": "Pharmacology",
+        "dosage_description": "Dosage",
+        "administration_description": "Administration",
+        "interaction_description": "Interaction",
+        "contraindications_description": "Contraindications",
+        "side_effects_description": "Side Effects",
+        "pregnancy_and_lactation_description": "Pregnancy and Lactation",
+        "precautions_description": "Precautions",
+        "pediatric_usage_description": "Pediatric Usage",
+        "overdose_effects_description": "Overdose Effects",
+        "duration_of_treatment_description": "Duration of Treatment",
+        "reconstitution_description": "Reconstitution",
+        "storage_conditions_description": "Storage Conditions",
+    }
+
+    parts = []
+    for field, label in field_labels.items():
+        value = getattr(medicine, field, None)
+        if value:
+            parts.append(f"{label}: {value}")
+
+    medicine_info = "\n".join(parts)
+
+    if not medicine_info.strip():
+        raise HTTPException(status_code=422, detail="No medicine information available to summarize")
+    print(language)
+    groq_client = _require_groq()
+    overview = await generate_medicine_overview(medicine_info, groq_client,language
+    )
+
+    return overview
+

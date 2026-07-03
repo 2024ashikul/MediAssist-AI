@@ -98,3 +98,8 @@ class MedicineDetail(BaseModel):
     duration_of_treatment_description: Optional[str] = None
     reconstitution_description: Optional[str] = None
     storage_conditions_description: Optional[str] = None
+
+
+class AIOverviewRequest(BaseModel):
+    brand_id: int
+    language : str = "en"
