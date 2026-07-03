@@ -1,10 +1,5 @@
 # 👩🏻‍⚕️ MediAssist AI — React + FastAPI edition
 
-This is your original Streamlit app split into a **FastAPI backend** (all the RAG/Gemini/Groq
-logic) and a **React frontend** (Vite), talking to each other over a JSON API. Every feature
-from `app.py` is preserved: bilingual RAG chat, structured symptom triage, visual symptom
-checker, prescription/report OCR, voice input, BMI calculator, hospital finder, and the
-emergency-helpline directory.
 
 ```
 mediassist-ai/
@@ -32,21 +27,6 @@ mediassist-ai/
 ```
 
 ---
-
-## 1. Put your `chroma_db` in place
-
-You mentioned you already have a built `chroma_db` locally. Copy that folder into:
-
-```
-mediassist-ai/backend/chroma_db/
-```
-
-If you don't have it anymore, rebuild it (put your PDFs in `backend/medical_books/` first):
-
-```bash
-cd backend
-python create_db.py
-```
 
 ## 2. Run the backend (FastAPI)
 
