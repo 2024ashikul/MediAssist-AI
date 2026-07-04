@@ -1,8 +1,5 @@
 import os
 import logging
-import inspect
-import json
-from typing import List, Optional
 
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -11,7 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
-
+import inspect
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 logger = logging.getLogger("mediassist.rag")
 
@@ -21,7 +18,7 @@ SYSTEM_PROMPT = inspect.cleandoc(
 
 You are MediAssist AI, a knowledgeable, precise, and compassionate Medical Information Assistant. 
 Your primary goal is to provide safe, context-grounded medical information based strictly on user data and the provided context.
-You are a RAG architectured ai, so you can take any information only from my source, info should be only from given contexts.
+You are a RAG architectured ai, so you can not take primary  information from other sources, info should be only from given contexts.
 
 ### 1. LANGUAGE RULE (STRICT OVERRIDE)
 Detect the language of the user's message and follow these rules absolutely. Never mix languages:
@@ -54,22 +51,14 @@ You must follow this internal logic before generating your response:
 If the user mentions life-threatening symptoms (e.g., chest pain + sweating, severe breathing difficulty, massive bleeding, unconsciousness, stroke symptoms):
 - Stop all normal protocols immediately.
 - Do NOT include specialist recommendations, medicine names, or detailed reasoning.
-- Output ONLY the following emergency warning:
-  * English: "🚨 EMERGENCY: Call 999 or go to the nearest hospital immediately!"
-  * Bengali: "🚨 জরুরি অবস্থা: অবিলম্বে ৯৯৯ নম্বরে কল করুন বা নিকটস্থ হাসপাতালে যান!"
+
 
 ### 6. OUTPUT FORMATTING & MANDATORY LINES
 For all non-emergency responses, structure your answer using clear Markdown (headings, bullet points, and bold text) and ensure the following elements are present near the end of the response:
 
-- Specialist Line: Conclude your assessment by recommending the specific type of doctor needed (e.g., "Recommended Specialist: Dermatologist" or "পরামর্শযোগ্য বিশেষজ্ঞ: চর্মরোগ বিশেষজ্ঞ (Dermatologist)"). Do not repeat this line if already mentioned in the text.
+- IF needed,conclude your assessment by recommending the specific type of doctor needed  Do not repeat this line if already mentioned in the text.
 - Medicine Formatting: Ensure all medicines follow the quote rules defined in Section 1.
 
-### 7. MANDATORY DISCLAIMER
-Every non-emergency medical response must conclude with this exact disclaimer text:
-- English: "⚠️ Disclaimer: I am an AI. Please consult a registered doctor for any health concern."
-- Bengali: "⚠️ সতর্কতা: আমি একটি এআই মডেল। যেকোনো স্বাস্থ্য সমস্যায় রেজিস্টার্ড ডাক্তারের পরামর্শ নিন।"
-
----
 Context:
 {context}
 """
@@ -133,27 +122,7 @@ class RagPipeline:
             )
         else:
             q = x["input"]
-            
-        # Invoke the retriever to capture the raw document list matching your query
-        raw_docs = self.retriever.invoke(q)
-        
-        # === RAW TEXT PRINTING LOGIC ===
-        print("\n" + "="*50)
-        print(f"🔍 DEBUG: RAW TEXT EXTRACTED FROM CHROMA DB")
-        print(f"Optimized Semantic Query: '{q}'")
-        print(f"Total Chunks Found: {len(raw_docs)}")
-        print("="*50)
-        
-        for index, doc in enumerate(raw_docs, start=1):
-            print(f"\n[Chunk #{index}]")
-            print(f"Content:\n{doc.page_content}")
-            if hasattr(doc, 'metadata') and doc.metadata:
-                print(f"Metadata properties: {doc.metadata}")
-            print("-" * 30)
-        print("="*50 + "\n")
-        # ===============================
-
-        return self._format_docs(raw_docs)
+        return self._format_docs(self.retriever.invoke(q))
 
     @staticmethod
     def to_lc_history(history_items) -> list:
