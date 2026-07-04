@@ -89,16 +89,28 @@ Format: {{"questions":[{{"id":1,"question":"...","options":["A","B","C","D"]}}]}
 
 async def generate_medicine_overview(medicine_info: str, groq_client,language : str) -> str: 
     try:
-        prompt = f"""This is the medicine info of a medicine: "{medicine_info}"
-        Please simplify this information for a general audience. Include:
-        - A short overview and what reasons the medicine is used for.
-        - How they should take it (including weight/age instructions if present).
-        - Any side effects.
-        -Generate a simple, easy-to-read text response in markdown.
-        reply in {language}
-        --max_tokens 2000 so reply within that
-        -besides brand name, generic, etc medical names on side write the term in english inside parenthesis
-        """
+        prompt = f"""
+You are an expert medical communicator. Your task is to simplify the following medicine information for a general audience.
+
+Medicine Information to process:
+"{medicine_info}"
+
+### Output Requirements:
+1. **Overview & Uses:** Provide a short overview and explain what reasons/symptoms the medicine is used for.
+2. **Usage Instructions:** Detail how they should take it (include specific weight, age, or dosage instructions if present in the text).
+3. **Side Effects:** List any notable side effects in a clear manner.
+
+### Language & Formatting Rules:
+- **Target Language:** Respond entirely in {language}.
+- **Formatting:** Generate a simple, easy-to-read text response using Markdown (bullet points, bold text).
+- **Conditional Medical Naming Rule (CRITICAL):**
+- If `{language}` is English, write all medicine brand names, generic names, and medical terms normally in English.
+- If `{language}` is Bengali, every time you mention a medical brand name, generic drug name, or core medical term, you MUST write the Bengali translation first, followed immediately by its English equivalent in parentheses. 
+    *Example format:* নাপা (Napa) হলো একটা প্যারাসিটামল (Paracetamol) যেটা জ্বর (Fever) বা ব্যথা (Pain) কমাতে ব্যবহৃত হয়।
+
+### Constraint:
+- Keep the entire response concise and strictly within 2000 tokens.
+"""
         
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
