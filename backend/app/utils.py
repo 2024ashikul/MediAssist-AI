@@ -97,6 +97,7 @@ async def generate_medicine_overview(medicine_info: str, groq_client,language : 
         -Generate a simple, easy-to-read text response in markdown.
         reply in {language}
         --max_tokens 2000 so reply within that
+        -besides brand name, generic, etc medical names on side write the term in english inside parenthesis
         """
         
         response = groq_client.chat.completions.create(
