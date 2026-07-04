@@ -1,5 +1,8 @@
 import os
 import logging
+import inspect
+import json
+from typing import List, Optional
 
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -8,7 +11,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
-import inspect
+
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 logger = logging.getLogger("mediassist.rag")
 
@@ -18,7 +21,7 @@ SYSTEM_PROMPT = inspect.cleandoc(
 
 You are MediAssist AI, a knowledgeable, precise, and compassionate Medical Information Assistant. 
 Your primary goal is to provide safe, context-grounded medical information based strictly on user data and the provided context.
-You are a RAG architectured ai, so you can not take primary  information from other sources, info should be only from given contexts.
+You are a RAG architectured ai, so you can take any information only from my source, info should be only from given contexts.
 
 ### 1. LANGUAGE RULE (STRICT OVERRIDE)
 Detect the language of the user's message and follow these rules absolutely. Never mix languages:
@@ -130,7 +133,27 @@ class RagPipeline:
             )
         else:
             q = x["input"]
-        return self._format_docs(self.retriever.invoke(q))
+            
+        # Invoke the retriever to capture the raw document list matching your query
+        raw_docs = self.retriever.invoke(q)
+        
+        # === RAW TEXT PRINTING LOGIC ===
+        print("\n" + "="*50)
+        print(f"🔍 DEBUG: RAW TEXT EXTRACTED FROM CHROMA DB")
+        print(f"Optimized Semantic Query: '{q}'")
+        print(f"Total Chunks Found: {len(raw_docs)}")
+        print("="*50)
+        
+        for index, doc in enumerate(raw_docs, start=1):
+            print(f"\n[Chunk #{index}]")
+            print(f"Content:\n{doc.page_content}")
+            if hasattr(doc, 'metadata') and doc.metadata:
+                print(f"Metadata properties: {doc.metadata}")
+            print("-" * 30)
+        print("="*50 + "\n")
+        # ===============================
+
+        return self._format_docs(raw_docs)
 
     @staticmethod
     def to_lc_history(history_items) -> list:
