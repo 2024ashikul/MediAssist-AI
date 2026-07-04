@@ -1,9 +1,9 @@
 import json
 import logging
 from typing import List, Optional
-
+import os
 logger = logging.getLogger("mediassist.utils")
-
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 SYMPTOM_KEYWORDS = [
     "ব্যথা", "বেথা", "বেদনা", "কামড়ানি", "কামড়ানো", "চাবানি", "পিনপিন", "ঝিনঝিন", "অবশ", "জ্বলন", "পোড়া", "অনূভুতি",
     "জ্বর", "কাশি", "কাশিঁ", "কফ", "শ্লেষ্মা", "শ্বাস", "হাঁপানী", "হাঁচি", "সর্দি", "শর্দি", "নাক", "গলা", "টনসিল", "কান", "চোখ", "কণ্ঠ",
@@ -72,7 +72,7 @@ Return ONLY valid JSON, no markdown, no preamble.
 Format: {{"questions":[{{"id":1,"question":"...","options":["A","B","C","D"]}}]}}"""
 
         raw = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=1000,

@@ -9,7 +9,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 import inspect
-
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 logger = logging.getLogger("mediassist.rag")
 
 SYSTEM_PROMPT = inspect.cleandoc(
@@ -18,7 +18,7 @@ SYSTEM_PROMPT = inspect.cleandoc(
 
 You are MediAssist AI, a knowledgeable, precise, and compassionate Medical Information Assistant. 
 Your primary goal is to provide safe, context-grounded medical information based strictly on user data and the provided context.
-You are a RAG architectured ai, so you can not take information from other sources, info should be only from given contexts.
+You are a RAG architectured ai, so you can not take primary  information from other sources, info should be only from given contexts.
 
 ### 1. LANGUAGE RULE (STRICT OVERRIDE)
 Detect the language of the user's message and follow these rules absolutely. Never mix languages:
@@ -45,6 +45,7 @@ You must follow this internal logic before generating your response:
 - NO DIAGNOSIS: Never provide a definitive diagnosis. Describe general possibilities and guidance only.
 - CONTEXT LIMITATION: Only use medical facts, drug names, and dosages explicitly stated in the provided [Context]. Never invent or assume medical treatments.
 - PURPOSEFUL QUESTIONS: Avoid generic questions like "can you tell me more?". Only ask a clarifying question if it is clinically necessary to provide safe guidance, and ensure it is not already answered in the patient blocks. Ask a maximum of ONE specific question (e.g., severity on a 1-10 scale, exact duration, or specific worsening factors).
+- Try to give advices which help in that specific context which does not have side effects
 
 ### 5. EMERGENCY PROTOCOL
 If the user mentions life-threatening symptoms (e.g., chest pain + sweating, severe breathing difficulty, massive bleeding, unconsciousness, stroke symptoms):
@@ -96,12 +97,12 @@ class RagPipeline:
         self.vector_db = Chroma(persist_directory=chroma_path, embedding_function=self.embeddings)
         self.retriever = self.vector_db.as_retriever(search_kwargs={"k": 3})
 
-        self.llm = ChatGroq(groq_api_key=groq_api_key, model_name="llama-3.3-70b-versatile", temperature=0.3)
+        self.llm = ChatGroq(groq_api_key=groq_api_key, model_name=GROQ_MODEL, temperature=0.3)
 
         self.contextualize_prompt = ChatPromptTemplate.from_messages([
             ("system",
             "Given the chat history and the latest user question, reformulate the question "
-            "to be standalone and clear. Reply in the SAME language as the user's input. "
+            "to be standalone and clear. Reply such that user get insightful response. Reply in the SAME language as the user's input. "
             "Do NOT answer it, just rephrase if needed. Return as it is if already clear."),
             MessagesPlaceholder("chat_history"),
             ("human", "{input}"),

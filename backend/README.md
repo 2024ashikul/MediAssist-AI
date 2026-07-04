@@ -49,6 +49,9 @@ Interactive docs are served at `http://localhost:8000/docs`.
 | `GEMINI_API_KEY` | Vision symptom checker, OCR extraction | Endpoints return 503 if missing |
 | `CHROMA_PATH` | RAG pipeline | Defaults to `./chroma_db`; falls back to `/app/chroma_db` for the Docker layout |
 | `FRONTEND_ORIGIN` | CORS | Defaults to `http://localhost:5173` |
+| `GEMINI_MODEL` | Gemini Model to use | Defaults to `gemini-2.5-flash` |
+| `GROQ_MODEL` | Groq Model to use | Defaults to `llama-3.3-70b-versatile` |
+
 
 ## The RAG chain
 
