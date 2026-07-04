@@ -45,7 +45,8 @@ export default function ChatInput({ language, onSend, disabled }) {
   const chunksRef = useRef([])
   const errorTimerRef = useRef(null)
   const recognitionRef = useRef(null)
-  const baseTextRef = useRef('') // text already in the box before this recording session started
+  const baseTextRef = useRef('') 
+  const finalResultsRef = useRef([]) 
 
   const useLiveTranscribe = isChromeSpeechCapable()
 
@@ -88,26 +89,25 @@ export default function ChatInput({ language, onSend, disabled }) {
     recognition.interimResults = true
 
     baseTextRef.current = text ? `${text} ` : ''
+    finalResultsRef.current = [] 
 
     recognition.onresult = (event) => {
-      let finalChunk = ''
       let interimChunk = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript
         if (event.results[i].isFinal) {
-          finalChunk += transcript
+          
+          finalResultsRef.current[i] = transcript
         } else {
           interimChunk += transcript
         }
       }
-      if (finalChunk) {
-        baseTextRef.current = `${baseTextRef.current}${finalChunk} `
-      }
-      setText(`${baseTextRef.current}${interimChunk}`)
+      const finalText = finalResultsRef.current.filter(Boolean).join(' ')
+      setText(`${baseTextRef.current}${finalText}${finalText ? ' ' : ''}${interimChunk}`)
     }
 
     recognition.onerror = (event) => {
-      if (event.error === 'no-speech' || event.error === 'aborted') return // benign, don't alarm the user
+      if (event.error === 'no-speech' || event.error === 'aborted') return 
       showVoiceError(t.voiceError)
       setRecording(false)
     }
@@ -127,7 +127,7 @@ export default function ChatInput({ language, onSend, disabled }) {
     setRecording(false)
   }
 
-  // ── Fallback: record audio, send to backend Whisper endpoint ─────────
+  
   async function startServerTranscription() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
