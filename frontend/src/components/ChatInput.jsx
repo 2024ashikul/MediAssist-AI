@@ -45,8 +45,8 @@ export default function ChatInput({ language, onSend, disabled }) {
   const chunksRef = useRef([])
   const errorTimerRef = useRef(null)
   const recognitionRef = useRef(null)
-  const baseTextRef = useRef('') 
-  const finalResultsRef = useRef([]) 
+  const baseTextRef = useRef('') // text already committed (before this recording session, plus any finalized utterances)
+  const shouldKeepListeningRef = useRef(false) // true while the user wants live transcription running
 
   const useLiveTranscribe = isChromeSpeechCapable()
 
@@ -62,6 +62,7 @@ export default function ChatInput({ language, onSend, disabled }) {
   useEffect(() => {
     return () => {
       clearTimeout(errorTimerRef.current)
+      shouldKeepListeningRef.current = false // otherwise onend would spin up a new session after unmount
       recognitionRef.current?.stop()
     }
   }, [])
@@ -81,53 +82,88 @@ export default function ChatInput({ language, onSend, disabled }) {
   }
 
   // ── Live transcription via Chrome's built-in engine ──────────────────
-  function startLiveTranscription() {
+  //
+  // NOTE: We deliberately do NOT use `continuous: true`. Chrome's continuous mode has a
+  // well-known bug where its internal recognition service periodically restarts itself
+  // mid-stream and re-transcribes audio it already finalized, but keeps firing onresult
+  // on the same SpeechRecognition instance as if nothing happened. That's what causes
+  // whole words/phrases to double up ("i have i have a fever fever").
+  //
+  // The reliable workaround is to run recognition in short, non-continuous sessions (each
+  // session ends automatically after a brief pause), commit that session's final text
+  // exactly once, and immediately start a fresh session in onend if the user still wants
+  // to keep listening. This sidesteps the buggy internal restart path entirely.
+
+  function buildRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     const recognition = new SpeechRecognition()
     recognition.lang = SPEECH_LANG_MAP[language] || 'en-US'
-    recognition.continuous = true
+    recognition.continuous = false
     recognition.interimResults = true
+    attachRecognitionHandlers(recognition)
+    return recognition
+  }
 
-    baseTextRef.current = text ? `${text} ` : ''
-    finalResultsRef.current = [] 
-
+  function attachRecognitionHandlers(recognition) {
     recognition.onresult = (event) => {
+      let finalChunk = ''
       let interimChunk = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript
         if (event.results[i].isFinal) {
-          
-          finalResultsRef.current[i] = transcript
+          finalChunk += transcript
         } else {
           interimChunk += transcript
         }
       }
-      const finalText = finalResultsRef.current.filter(Boolean).join(' ')
-      setText(`${baseTextRef.current}${finalText}${finalText ? ' ' : ''}${interimChunk}`)
+      if (finalChunk) {
+        baseTextRef.current = `${baseTextRef.current}${finalChunk} `
+      }
+      setText(`${baseTextRef.current}${interimChunk}`)
     }
 
     recognition.onerror = (event) => {
-      if (event.error === 'no-speech' || event.error === 'aborted') return 
+      if (event.error === 'no-speech' || event.error === 'aborted') return // benign, don't alarm the user
       showVoiceError(t.voiceError)
+      shouldKeepListeningRef.current = false
       setRecording(false)
     }
 
     recognition.onend = () => {
-      setRecording(false)
+      if (!shouldKeepListeningRef.current) {
+        setRecording(false)
+        return
+      }
+      // The user is still holding the mic "on" — this session just ended naturally
+      // (e.g. a pause was detected). Start a fresh session to keep listening.
+      try {
+        const next = buildRecognition()
+        recognitionRef.current = next
+        next.start()
+      } catch (e) {
+        shouldKeepListeningRef.current = false
+        setRecording(false)
+      }
     }
+  }
 
+  function startLiveTranscription() {
+    baseTextRef.current = text ? `${text} ` : ''
+    shouldKeepListeningRef.current = true
+    const recognition = buildRecognition()
     recognitionRef.current = recognition
     recognition.start()
     setRecording(true)
   }
 
   function stopLiveTranscription() {
+    shouldKeepListeningRef.current = false
     recognitionRef.current?.stop()
     recognitionRef.current = null
     setRecording(false)
   }
 
-  
+  // ── Fallback: record audio, send to backend Whisper endpoint ─────────
   async function startServerTranscription() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
