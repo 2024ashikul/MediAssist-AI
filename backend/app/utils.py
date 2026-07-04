@@ -5,14 +5,26 @@ from typing import List, Optional
 logger = logging.getLogger("mediassist.utils")
 
 SYMPTOM_KEYWORDS = [
-    "ব্যথা", "বেথা", "জ্বর", "কাশি", "শ্বাস", "বমি", "মাথা", "বুক", "পেট", "গলা", "চোখ", "কান", "নাক",
-    "হাত", "পা", "দুর্বল", "ক্লান্ত", "ঘুম", "খিদে", "র্যাশ", "চুলকানি", "ফোলা", "রক্ত", "ডায়রিয়া",
-    "betha", "jor", "jore", "bugti", "kashi", "shash", "bomi", "matha", "buk", "pet", "gola",
-    "chokh", "kan", "nak", "durbolta", "ghum", "khide", "rash", "cholkani", "fola", "shordi", "khansi",
-    "mathay", "pate", "buke",
-    "pain", "fever", "cough", "headache", "nausea", "vomit", "dizzy", "tired", "weak", "swelling",
-    "bleeding", "diarrhea", "chest", "stomach", "throat", "eye", "ear", "breathing", "itching",
-    "burning", "ache", "sore", "hurt", "suffering", "feeling",
+    "ব্যথা", "বেথা", "বেদনা", "কামড়ানি", "কামড়ানো", "চাবানি", "পিনপিন", "ঝিনঝিন", "অবশ", "জ্বলন", "পোড়া", "অনূভুতি",
+    "জ্বর", "কাশি", "কাশিঁ", "কফ", "শ্লেষ্মা", "শ্বাস", "হাঁপানী", "হাঁচি", "সর্দি", "শর্দি", "নাক", "গলা", "টনসিল", "কান", "চোখ", "কণ্ঠ",
+    "বমি", "বমিবমি", "পেট", "গ্যাস্ট্রিক", "গ্যাস", "অম্বল", "বুকজ্বালা", "বদহজম", "ডায়রিয়া", "পাতলা", "পায়খানা", "কোষ্ঠকাঠিন্য", "খাবার", "খিদে", "ক্ষুধা",
+    "মাথা", "ঘোরা", "চক্কর", "দুর্বল", "ক্লান্ত", "অবসাদ", "ঘুম", "অনিদ্রা", "কাঁপনি", "কম্পন", "খিঁচুনি",
+    "র্যাশ", "চুলকানি", "ফোলা", "ঘা", "পাচড়া", "বিচি", "ফুসকুড়ি", "পাকা", "রস",
+    "বুক", "পিঠ", "কোমর", "ঘাড়", "হাত", "পা", "হাঁটু", "গিঁঠ", "জয়েন্ট", "মাংসপেশি", "দাঁত",
+    "রক্ত", "রক্তপাত", "পুঁজ", "প্রস্রাব", "পিশাব", "পায়খানা",
+    "betha", "byatha", "batha", "bedona", "kamrani", "chabani", "jhinjhin", "obosh", "jdirty", "jlapora", "puda",
+    "jor", "jwor", "zhor", "kashi", "khansi", "kof", "shash", "shashkosto", "haphani", "hachi", "shordi", "sordi", "gola", "tonsil", "nak", "kan", "chokh",
+    "bomi", "vomit", "pet", "pete", "pate", "gastric", "gas", "ombol", "bukjola", "bodhojom", "diarrhea", "patla", "paykhana", "koshthokathinno", "khide", "khuda",
+    "matha", "mathay", "ghora", "chokkor", "durbol", "durbolta", "klanto", "ghum", "onidra", "khichuni", "kapuni",
+    "rash", "cholkani", "chulkani", "fola", "gha", "fuskuri",
+    "buk", "buke", "pith", "komor", "koomor", "ghar", "hat", "pa", "bahu", "hatu", "gith", "joint", "mangsopeshi", "dat", "dath",
+    "rokto", "roghth", "puj", "proshrab", "pishab", "poshab",
+    "pain", "ache", "hurt", "sore", "throbbing", "burning", "stinging", "cramp", "spasm", "discomfort", "suffering", "feeling",
+    "fever", "chills", "shivering", "sweating", "fatigue", "tired", "weak", "weakness", "lethargy", "dizzy", "dizziness", "giddiness", "lightheaded", "faint",
+    "cough", "coughing", "mucus", "phlegm", "sputum", "breathing", "breathless", "wheezing", "asthma", "sneezing", "congestion", "throat", "hoarse", "ear", "earache", "eye", "vision", "nose", "bleeding",
+    "chest", "heart", "palpitation", "tightness", "pressure",
+    "nausea", "vomit", "vomiting", "diarrhea", "loose", "stool", "constipation", "stomach", "abdomen", "abdominal", "belly", "gastric", "acidity", "heartburn", "bloating", "indigestion", "appetite", "nauseous",
+    "back", "backache", "lumbar", "neck", "joint", "muscle", "swelling", "swollen", "inflammation", "rash", "itching", "itchy", "allergy", "allergic", "lesion", "ulcer", "blister"
 ]
 
 
@@ -37,7 +49,6 @@ def build_triage_answers_block(questions: List[dict], answers: dict) -> str:
 
 
 async def generate_triage_questions(symptom_text: str, groq_client) -> list:
-    """Mirrors the triage-question generator from the original Streamlit app."""
     try:
         prompt = f"""Patient said: "{symptom_text}"
 
@@ -85,13 +96,14 @@ async def generate_medicine_overview(medicine_info: str, groq_client,language : 
         - Any side effects.
         -Generate a simple, easy-to-read text response in markdown.
         reply in {language}
+        --max_tokens 2000 so reply within that
         """
         
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
-            max_tokens=1000,
+            max_tokens=2000,
         )
         
         return response.choices[0].message.content

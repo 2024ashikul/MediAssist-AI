@@ -47,7 +47,7 @@ export default function ChatWindow({ messages, pending, language = 'en' }) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto flex flex-col gap-4 px-8 py-6">
+    <div className="flex-1 overflow-y-auto flex flex-col gap-4 px-3 py-3 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       {messages.map((m, i) => {
         if (m.type === 'confirmation') {
           return <ConfirmationBubble key={i} label={m.label} content={m.content} />

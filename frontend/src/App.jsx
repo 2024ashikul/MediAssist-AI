@@ -345,8 +345,8 @@ export default function App() {
             <Box
               sx={{
                 px: { xs: 3, md: 4 },
-                pt: 2.5,
-                pb: 2.5,
+                pt: { xs :1.5, md :2.5},
+                pb: { xs :1.5, md :2.5},
                 borderBottom: 1,
                 borderColor: '#e2e8f0',
                 display: 'flex',
@@ -393,7 +393,7 @@ export default function App() {
             </Box>
 
             {/* Dynamic Core Sub-Module UI Injections */}
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', py: 4, px: { xs: 2, sm: 3 } }}>
+            <Box sx={{ flexGrow: 1, overflowY: 'auto',py: { xs: 2, sm: 4, lg:6 }, px: { xs: 2, sm: 3 } }}>
               <Container maxWidth="md" disableGutters>
                 {renderFeature()}
               </Container>

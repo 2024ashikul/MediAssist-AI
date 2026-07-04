@@ -22,20 +22,20 @@ const FIELD_CONFIG = [
 
 function CollapsibleSection({ id, icon, label, isHtml, warning, content, isOpen, onToggle }) {
   return (
-    <div className={`border rounded-xl overflow-hidden ${warning ? 'border-coral-500/30' : 'border-brand-100'}`}>
+    <div className={`border rounded-lg sm:rounded-xl overflow-hidden ${warning ? 'border-coral-500/30' : 'border-brand-100'}`}>
       <button
         onClick={() => onToggle(id)}
-        className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${warning ? 'bg-coral-50 text-coral-600' : 'bg-brand-50/60 hover:bg-brand-50 text-brand-900'
+        className={`w-full flex items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 text-left transition-colors ${warning ? 'bg-coral-50 text-coral-600' : 'bg-brand-50/60 hover:bg-brand-50 text-brand-900'
           }`}
       >
-        <span className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
+        <span className="text-[0.7rem] sm:text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
           <span>{icon}</span> {label}
         </span>
-        <span className={`text-sm transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
+        <span className={`text-xs sm:text-sm transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
       </button>
 
       {isOpen && (
-        <div className={`px-4 py-3 text-sm leading-relaxed ${warning ? 'text-coral-600 bg-coral-50/40' : 'text-ink bg-white'}`}>
+        <div className={`px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm leading-relaxed text-justify ${warning ? 'text-coral-600 bg-coral-50/40' : 'text-ink bg-white'}`}>
           {isHtml ? (
             <div dangerouslySetInnerHTML={{ __html: content }} />
           ) : (
@@ -120,7 +120,7 @@ export default function MedicineFinder({ language }) {
     }
   }
   
-  // Fetch and cache AI Summary from the backend endpoint
+  
 
   async function fetchAiOverview(brandId,language) {
     if (aiOverview) {
@@ -146,26 +146,26 @@ export default function MedicineFinder({ language }) {
   return (
     // Changed max-w-2xl to max-w-4xl to make the layout wider and stretched
     <div className="max-w-4xl mx-auto relative w-full">
-      <div className="flex gap-2.5 mb-3">
+      <div className="flex gap-2 sm:gap-2.5 mb-2.5 sm:mb-3">
         <input
           type="text"
           value={query}
           placeholder={t.medicineSearchPlaceholder}
           onChange={(e) => { setQuery(e.target.value); setDetail(null) }}
-          className="flex-1 border border-brand-100 rounded-xl px-4 py-3 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-200 transition"
+          className="flex-1 border border-brand-100 rounded-lg sm:rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-sm sm:text-base outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-200 transition"
         />
       </div>
 
       {suggestions.length > 0 && !detail && (
-        <div className="border border-brand-100 rounded-xl overflow-hidden mb-4 divide-y divide-brand-50 bg-white shadow-sm">
+        <div className="border border-brand-100 rounded-lg sm:rounded-xl overflow-hidden mb-3 sm:mb-4 divide-y divide-brand-50 bg-white shadow-sm">
           {suggestions.map((s) => (
             <button
               key={s.brand_id}
               onClick={() => selectMedicine(s.brand_id, s.brand_name)}
-              className="w-full text-left px-4 py-2.5 hover:bg-brand-50 transition-colors"
+              className="w-full text-left px-3 py-2 sm:px-4 sm:py-2.5 hover:bg-brand-50 transition-colors"
             >
-              <span className="font-semibold text-brand-900">{s.brand_name}</span>
-              <span className="text-sm text-slate-500 ml-2">
+              <span className="text-sm sm:text-base font-semibold text-brand-900">{s.brand_name}</span>
+              <span className="text-xs sm:text-sm text-slate-500 ml-2">
                 {s.generic_name} · {s.strength} · {s.dosage_form} · {s.manufacturer}
               </span>
             </button>
@@ -174,10 +174,10 @@ export default function MedicineFinder({ language }) {
       )}
 
       {recent.length > 0 && !detail && suggestions.length === 0 && (
-        <div className="flex flex-wrap gap-2 mb-5">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-5">
           {recent.map((r) => (
             <button key={r} onClick={() => setQuery(r)}
-              className="text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-100 rounded-full px-3 py-1.5 hover:bg-brand-100 transition-colors">
+              className="text-[0.7rem] sm:text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-100 rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 hover:bg-brand-100 transition-colors">
               {r}
             </button>
           ))}
@@ -185,50 +185,50 @@ export default function MedicineFinder({ language }) {
       )}
 
       {loading && (
-        <div className="flex items-center gap-2 text-sm text-slate-500 mb-4">
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 mb-3 sm:mb-4">
           <span className="spinner text-brand-500" /> {t.medicineSearching}
         </div>
       )}
 
       {error && !loading && (
-        <div className="bg-coral-50 text-coral-600 rounded-lg px-4 py-3 text-sm mb-4">⚠️ {error}</div>
+        <div className="bg-coral-50 text-coral-600 rounded-lg px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm mb-3 sm:mb-4">⚠️ {error}</div>
       )}
 
       {!detail && !loading && !error && suggestions.length === 0 && (
-        <div className="text-center text-slate-400 border border-dashed border-brand-100 rounded-2xl p-10 bg-white">
-          <span className="text-3xl block mb-2">💊</span>
-          <p className="font-semibold text-brand-900 mb-1">{t.medicineEmptyTitle}</p>
-          <p className="text-sm">{t.medicineEmptySub}</p>
+        <div className="text-center text-slate-400 border border-dashed border-brand-100 rounded-xl sm:rounded-2xl p-6 sm:p-10 bg-white">
+          <span className="text-2xl sm:text-3xl block mb-1.5 sm:mb-2">💊</span>
+          <p className="text-sm sm:text-base font-semibold text-brand-900 mb-1">{t.medicineEmptyTitle}</p>
+          <p className="text-xs sm:text-sm">{t.medicineEmptySub}</p>
         </div>
       )}
 
       {detail && !loading && (
-        <div className="bg-white border border-brand-100 rounded-2xl p-6 shadow-soft flex flex-col gap-4">
+        <div className="bg-white border border-brand-100 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-soft flex flex-col gap-3 sm:gap-4">
 
           {/* Medicine Introduction Header Block */}
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-slate-50 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 border-b border-slate-50 pb-3 sm:pb-4">
             <div>
-              <h4 className="font-display text-2xl font-bold text-brand-900">{detail.brand_name}</h4>
-              <p className="text-sm text-slate-500 mt-1.5">
+              <h4 className="font-display text-lg sm:text-2xl font-bold text-brand-900">{detail.brand_name}</h4>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 sm:mt-1.5">
                 {detail.generic_name} · {detail.strength} · {detail.dosage_form} · {detail.manufacturer}
               </p>
             </div>
 
             {/* Top Right Controls: AI Overview Button & Mode Toggle Toggles */}
-            <div className="flex items-center gap-2 self-start sm:self-auto">
+            <div className="flex items-center gap-1.5 sm:gap-2 self-start sm:self-auto">
               {aiOverview && !aiLoading && (
-                <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-xs font-medium">
+                <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-[0.7rem] sm:text-xs font-medium">
                   <button
                     onClick={() => setViewMode('normal')}
-                    className={`px-2.5 py-1 rounded-md transition-colors ${viewMode === 'normal' ? 'bg-white text-brand-900 shadow-sm font-semibold' : 'text-slate-500 hover:text-slate-800'}`}
+                    className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md transition-colors ${viewMode === 'normal' ? 'bg-white text-brand-900 shadow-sm font-semibold' : 'text-slate-500 hover:text-slate-800'}`}
                   >
                     Standard
                   </button>
                   <button
                     onClick={() => setViewMode('ai')}
-                    className={`px-2.5 py-1 rounded-md transition-colors ${viewMode === 'ai' ? 'bg-brand-500 text-white shadow-sm font-semibold' : 'text-slate-500 hover:text-slate-800'}`}
+                    className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md transition-colors ${viewMode === 'ai' ? 'bg-brand-500 text-white shadow-sm font-semibold' : 'text-slate-500 hover:text-slate-800'}`}
                   >
-                    AI View
+                    Summary
                   </button>
                 </div>
               )}
@@ -237,9 +237,9 @@ export default function MedicineFinder({ language }) {
                 <button
                   onClick={() => fetchAiOverview(detail.brand_id,language)}
                   disabled={aiLoading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition disabled:opacity-70"
+                  className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-[0.7rem] sm:text-xs font-semibold rounded-lg sm:rounded-xl shadow-sm transition disabled:opacity-70"
                 >
-                  <span>✨</span> {aiLoading ? 'Analyzing...' : 'AI Overview'}
+                  <span></span> {aiLoading ? 'Analyzing...' : 'Medicine Summary'}
                 </button>
               )}
             </div>
@@ -247,27 +247,27 @@ export default function MedicineFinder({ language }) {
 
           {/* AI View Display Mode */}
           {viewMode === 'ai' && (
-            <div className="bg-purple-50/40 border border-purple-100 rounded-xl p-5 min-h-[150px] transition-all">
-              <div className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-wider mb-3">
-                <span>✨</span> Medicine Summary
+            <div className="bg-purple-50/40 border border-purple-100 rounded-lg sm:rounded-xl p-3.5 sm:p-5 min-h-[120px] sm:min-h-[150px] transition-all">
+              <div className="flex items-center gap-2 text-[0.7rem] sm:text-xs font-bold text-purple-700 uppercase tracking-wider mb-2 sm:mb-3">
+                <span></span> Medicine Summary
               </div>
 
               {aiLoading && (
-                <div className="flex flex-col gap-2 py-4 animate-pulse">
-                  <div className="h-4 bg-purple-200/60 rounded w-3/4"></div>
-                  <div className="h-4 bg-purple-200/60 rounded w-5/6"></div>
-                  <div className="h-4 bg-purple-200/60 rounded w-1/2"></div>
+                <div className="flex flex-col gap-1.5 sm:gap-2 py-3 sm:py-4 animate-pulse">
+                  <div className="h-3 sm:h-4 bg-purple-200/60 rounded w-3/4"></div>
+                  <div className="h-3 sm:h-4 bg-purple-200/60 rounded w-5/6"></div>
+                  <div className="h-3 sm:h-4 bg-purple-200/60 rounded w-1/2"></div>
                 </div>
               )}
 
               {aiError && (
-                <div className="text-sm text-coral-600 bg-coral-50/50 p-3 rounded-lg border border-coral-200">
+                <div className="text-xs sm:text-sm text-coral-600 bg-coral-50/50 p-2.5 sm:p-3 rounded-lg border border-coral-200">
                   ⚠️ {aiError}
                 </div>
               )}
 
               {!aiLoading && !aiError && aiOverview && (
-                <div className="text-sm text-slate-800 leading-relaxed prose prose-sm max-w-none prose-headings:text-brand-900 prose-strong:text-brand-900">
+                <div className="text-xs sm:text-sm text-slate-800 leading-relaxed text-justify prose prose-sm max-w-none prose-headings:text-brand-900 prose-strong:text-brand-900">
                   <ReactMarkdown>{aiOverview}</ReactMarkdown>
                 </div>
               )}
@@ -276,7 +276,7 @@ export default function MedicineFinder({ language }) {
 
           {/* Normal View Display Mode (Collapsible Sections) */}
           {viewMode === 'normal' && (
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2 sm:gap-2.5">
               {FIELD_CONFIG.filter((f) => detail[f.key]).map((f) => (
                 <CollapsibleSection
                   key={f.key}
@@ -294,9 +294,9 @@ export default function MedicineFinder({ language }) {
           )}
 
           {/* Disclaimer Notification Footer */}
-          <div className="flex gap-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-lg px-3.5 py-3 text-xs leading-relaxed mt-1">
+          <div className="flex gap-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-lg px-3 py-2.5 sm:px-3.5 sm:py-3 text-[0.7rem] sm:text-xs leading-relaxed mt-1">
             <span>ℹ️</span>
-            <span>
+            <span className="text-justify">
               This information is general in nature and provided for reference only. It is not a substitute
               for professional medical advice. Please consult your doctor or pharmacist before starting,
               stopping, or changing any medication.

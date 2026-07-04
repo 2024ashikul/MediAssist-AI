@@ -30,11 +30,7 @@ function Stepper({ step, labels }) {
   )
 }
 
-// Pulls brand names out of the "Medicines:" list the Gemini prompt produces, e.g.:
-// Medicines:
-// - Napa — 500mg — 2x daily — 5 days
-// - [illegible] — ...
-// Falls back to scanning any "- name — ..." style line if no explicit "Medicines:" header is found.
+
 function extractBrandNames(markdown) {
   if (!markdown) return []
   const lines = markdown.split('\n')
@@ -171,13 +167,7 @@ export default function OcrChecker({ language, onConfirm, confirmed, onBrandClic
           ) : (
             <div className="relative rounded-2xl overflow-hidden bg-ink shadow-soft">
               <img src={preview} alt="preview" className="w-full max-h-72 object-cover opacity-90" />
-              {/* scan corner frame */}
-              <div className="pointer-events-none absolute inset-3 border-2 border-warn-500/70 rounded-lg">
-                <span className="absolute -top-0.5 -left-0.5 w-4 h-4 border-t-4 border-l-4 border-warn-500 rounded-tl" />
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 border-t-4 border-r-4 border-warn-500 rounded-tr" />
-                <span className="absolute -bottom-0.5 -left-0.5 w-4 h-4 border-b-4 border-l-4 border-warn-500 rounded-bl" />
-                <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 border-b-4 border-r-4 border-warn-500 rounded-br" />
-              </div>
+             
               <div className="flex items-center justify-between bg-black/60 text-white text-xs px-3 py-2">
                 <span className="truncate">{file?.name}</span>
                 <button onClick={clearAll} className="text-warn-500 underline font-semibold shrink-0 ml-2">

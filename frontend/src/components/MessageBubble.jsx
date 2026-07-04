@@ -22,7 +22,7 @@ export default function MessageBubble({ role, content }) {
         )}
       </div>
       <div
-        className={`min-w-0 flex-1 sm:flex-initial px-4 py-3 rounded-2xl text-[0.82rem] sm:text-[0.94rem] leading-relaxed shadow-soft [&_p]:m-0 [&_p]:mb-2 [&_p:last-child]:mb-0 ${
+        className={`min-w-0 flex-1 sm:flex-initial text-justify  px-2 py-2 sm:px-4 rounded-2xl text-[0.82rem] sm:text-[0.94rem] leading-relaxed shadow-soft [&_p]:m-0 [&_p]:mb-2 [&_p:last-child]:mb-0 ${
           isUser
             ? 'bg-gradient-to-br from-brand-900 to-brand-800 text-white rounded-br-sm [&_strong]:text-brand-100'
             : 'bg-white border border-brand-100 rounded-bl-sm [&_strong]:text-brand-900'

@@ -15,7 +15,7 @@ export default function QuickToolsBar({ language, activeView, onSelect }) {
   const t = uiStrings[language]
 
   return (
-    <div className="px-4 md:px-6 pt-2 pb-1 bg-white border-t border-brand-50/80">
+    <div className="px-1 md:px-7 pt-2 pb-1 bg-white border-t border-brand-50/80">
       <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <span className="text-[0.65rem] font-bold uppercase tracking-wide text-slate-400 shrink-0 mr-0.5">
           {t.quickTools}

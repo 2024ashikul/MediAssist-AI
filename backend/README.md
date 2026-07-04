@@ -1,4 +1,125 @@
-# MediAssist AI
+# MediAssist AI — Backend
+
+FastAPI service exposing the RAG chat pipeline, symptom-image analysis, prescription OCR, voice
+transcription, and a local medicine lookup. See the [root README](../README.md) for the overall
+system architecture and how these pieces fit together with the frontend.
+
+## Layout
+
+```
+backend/
+├── app/
+│   ├── main.py                 API routes
+│   ├── rag_pipeline.py         RagPipeline — Chroma + Groq chain, built once at startup
+│   ├── vision_ocr.py           Gemini calls for the symptom-image checker and OCR
+│   ├── get_medicine_data.py    SQLite (FTS5) queries against the medicine database
+│   ├── utils.py                Symptom keyword matching, triage question generation, prompt assembly
+│   └── models.py                Pydantic request/response schemas
+├── create_db.py                 Original DB-builder script (unchanged from the source project)
+├── check_models.py               Lists available Gemini models for the configured API key
+├── chroma_db/                    Persisted vector store (see build-rag-pipeline/)
+├── medicine_data/medex.db        SQLite medicine database, queried read-only
+├── requirements.txt
+├── .env.example
+└── Dockerfile
+```
+
+## Setup
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+cp .env.example .env
+# fill in GROQ_API_KEY and GEMINI_API_KEY
+
+uvicorn app.main:app --reload --port 8000
+```
+
+Confirm it's up at `http://localhost:8000/api/health` — check that `rag_ready` is `true`.
+Interactive docs are served at `http://localhost:8000/docs`.
+
+### Environment variables
+
+| Variable | Required for | Notes |
+|---|---|---|
+| `GROQ_API_KEY` | Chat, triage, voice transcription, medicine overviews | Chain fails to build at startup without it |
+| `GEMINI_API_KEY` | Vision symptom checker, OCR extraction | Endpoints return 503 if missing |
+| `CHROMA_PATH` | RAG pipeline | Defaults to `./chroma_db`; falls back to `/app/chroma_db` for the Docker layout |
+| `FRONTEND_ORIGIN` | CORS | Defaults to `http://localhost:5173` |
+
+## The RAG chain
+
+`RagPipeline` (in `app/rag_pipeline.py`) is constructed once during the app's lifespan and reused
+across every request — the embeddings model and vector store are not reloaded per call.
+
+1. **Contextualization** — if there's prior chat history, the latest user message is rewritten into
+   a standalone question by the LLM before retrieval (keeps follow-up questions resolvable without
+   the user repeating themselves). If there's no history, the raw message is used as-is.
+2. **Retrieval** — the (possibly rewritten) query is embedded and matched against Chroma with
+   `k=3`.
+3. **Generation** — the retrieved chunks, the full chat history, and the system prompt are passed
+   to `ChatGroq` (`llama-3.3-70b-versatile`, `temperature=0.3`).
+
+The system prompt (top of `rag_pipeline.py`) is where most of the actual behavior is enforced —
+strict language matching (Bengali script in, Bengali script out, no mixing), a reasoning order that
+checks for triage/OCR/vision context before asking the user anything else, a ban on inventing
+medicine names or dosages, a rule against outright diagnoses, an emergency short-circuit for red-flag
+symptom combinations, and a closing disclaimer for any answer touching a serious health concern.
+
+## Symptom triage
+
+Before a chat message reaches the RAG chain, `utils.is_symptom_query` checks it against a bilingual
+(Bengali script, Banglish, and English) keyword list. If it matches, the backend calls Groq once to
+generate 3–5 structured multiple-choice questions (`utils.generate_triage_questions`) covering
+onset, severity, associated symptoms, aggravating/relieving factors, and red flags — and returns
+those to the frontend instead of an answer. Once the user answers (or explicitly skips) via
+`/api/chat/triage-submit`, the answers are folded into the original message
+(`utils.build_triage_answers_block`) and run through the same RAG chain as any other message.
+
+## Medicine database
+
+`get_medicine_data.py` opens `medicine_data/medex.db` read-only and queries an FTS5 virtual table
+(`brand_search`) joined against the full record table (`brand_full`) for brand-name search.
+Detail records go through `strip_html` to clean up the description fields before being returned —
+`dosage_description` is deliberately left as raw HTML since the frontend renders it directly.
+`/api/medicine/ai_overview` is the only place an LLM touches this data: it flattens the structured
+record into a labeled text block and asks Groq to rewrite it as a plain-language summary in the
+requested language.
+
+## Endpoints
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/health` | Backend + RAG readiness check |
+| POST | `/api/chat` | Send a chat message — returns either an `answer` or a `triage` question set |
+| POST | `/api/chat/triage-submit` | Submit (or skip) triage answers — returns the RAG `answer` |
+| POST | `/api/vision/analyze` | Upload a symptom photo (multipart) → Gemini description |
+| POST | `/api/ocr/extract` | Upload a prescription/report photo (multipart) → Gemini transcript |
+| POST | `/api/voice/transcribe` | Upload recorded audio (multipart) → Groq Whisper transcript |
+| GET | `/api/search?q=` | Full-text brand-name search against the medicine database |
+| GET | `/api/medicine/{brand_id}` | Full structured record for one medicine |
+| POST | `/api/medicine/ai_overview` | Plain-language summary of a medicine record, in the requested language |
+
+## Docker
+
+```bash
+docker build -t mediassist-backend .
+docker run -p 8000:8000 --env-file .env -v $(pwd)/chroma_db:/app/chroma_db mediassist-backend
+```
+
+The image expects `chroma_db/` to be present at build time (`COPY chroma_db ./chroma_db`) or
+mounted as a volume at runtime — `docker-compose.yml` at the repo root does the latter.
+
+## Known rough edges
+
+- `vision_ocr.py` hardcodes `gemini-2.5-flash`. If vision/OCR calls start failing with a
+  "model not found" error, run `check_models.py` against your API key and swap in whatever's
+  currently available.
+- The mic recorder on the frontend needs HTTPS or `localhost` to access the microphone — fine for
+  local dev, but relevant if you deploy the frontend over plain HTTP.# MediAssist AI
 
 MediAssist AI is a bilingual (Bengali / English) medical information assistant. It combines a
 retrieval-augmented chat pipeline with a symptom-image checker, prescription OCR, a local medicine
