@@ -109,8 +109,8 @@ requested language.
 ## Docker
 
 ```bash
-docker build -t mediassist-backend .
-docker run -p 8000:8000 --env-file .env -v $(pwd)/chroma_db:/app/chroma_db mediassist-backend
+docker build -t docmindai-backend .
+docker run -p 8000:8000 --env-file .env -v $(pwd)/chroma_db:/app/chroma_db docmindai-backend
 ```
 
 The image expects `chroma_db/` to be present at build time (`COPY chroma_db ./chroma_db`) or

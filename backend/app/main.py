@@ -104,7 +104,7 @@ async def _read_image(file: UploadFile) -> Image.Image:
 
 @app.get("/")
 def root():
-    return {"message": "Hello, welcome !  The server is running."}
+    return {"message": "Hello, welcome! The server is running."}
 
 
 # ─── Health ─────────────────────────────────────────────────────────

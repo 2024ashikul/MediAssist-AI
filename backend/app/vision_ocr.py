@@ -4,9 +4,6 @@ from PIL import Image
 import os
 logger = logging.getLogger("mediassist.vision")
 
-# NOTE: kept identical to the original app.py. If this model name errors out on
-# your API key, run backend/check_models.py and swap in a valid model id
-# (the project README lists "gemini-2.5-flash" as the intended model).
 GEMINI_MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
 _model = None

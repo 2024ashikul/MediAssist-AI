@@ -11,8 +11,7 @@ COPY requirements.txt ./
 RUN pip3 install -r requirements.txt
 
 COPY app ./app
-# Copy your pre-built chroma_db into the image (see README for alternatives,
-# e.g. mounting it as a volume instead).
+
 COPY chroma_db ./chroma_db
 
 EXPOSE 8000

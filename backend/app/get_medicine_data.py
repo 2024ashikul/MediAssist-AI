@@ -14,7 +14,7 @@ def strip_html(text: str) -> str:
         return ""
     return re.sub(r"<[^>]+>", "", text).strip()
 
-def search_brand(query: str, limit: int = 5) -> list[MedicineSearchResult]:
+def search_brand(query: str, limit: int = 10) -> list[MedicineSearchResult]:
     conn = get_connection()
     safe_query = query.replace('"', '""')
     fts_query = f'"{safe_query}"'
