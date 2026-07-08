@@ -102,6 +102,11 @@ async def _read_image(file: UploadFile) -> Image.Image:
         raise HTTPException(status_code=400, detail="Uploaded file is not a valid image.")
 
 
+@app.get("/")
+def root():
+    return {"message": "Hello, welcome !  The server is running."}
+
+
 # ─── Health ─────────────────────────────────────────────────────────
 @app.get("/api/health", response_model=HealthResponse)
 def health():

@@ -38,7 +38,7 @@ export const emergencyHelplines = [
 
 export const uiStrings = {
   bn: {
-    appName: "MediAssist AI",
+    appName: "DocMind AI",
     tagline: "আপনার ব্যক্তিগত স্বাস্থ্য সহকারী",
     navChat: "হোম/চ্যাট",
     askAnything: "আপনার স্বাস্থ্য বিষয়ক যেকোনো প্রশ্ন করুন...",
@@ -114,7 +114,7 @@ export const uiStrings = {
     connectionError: "সার্ভারের সাথে সংযোগ করা যায়নি। ব্যাকএন্ড চালু আছে কিনা দেখুন।",
   },
   en: {
-    appName: "MediAssist AI",
+    appName: "DocMind AI",
     tagline: "Your personal health assistant",
     navChat: "Home/Chat",
     baseState: "Ask any question about your health. For more accurate results:\n\n📋 Attach a prescription or photo if symptoms are visible\n💊 Look up medicine details from the left panel\n📏 Add your weight/height for personalized advice\n🚨 Emergency helpline numbers are available anytime you need them",

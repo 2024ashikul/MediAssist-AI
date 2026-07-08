@@ -1,6 +1,6 @@
-# MediAssist AI — Frontend
+# DocMind AI — Frontend
 
-React + Vite single-page app for MediAssist AI. Talks exclusively to the FastAPI backend over
+React + Vite single-page app for DocMind AI. Talks exclusively to the FastAPI backend over
 `fetch` — no server-side rendering, no separate state management library. See the
 [root README](../README.md) for how this fits into the overall system.
 

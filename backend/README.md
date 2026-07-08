@@ -1,4 +1,4 @@
-# MediAssist AI — Backend
+# DocMind AI — Backend
 
 FastAPI service exposing the RAG chat pipeline, symptom-image analysis, prescription OCR, voice
 transcription, and a local medicine lookup. See the [root README](../README.md) for the overall
@@ -122,9 +122,9 @@ mounted as a volume at runtime — `docker-compose.yml` at the repo root does th
   "model not found" error, run `check_models.py` against your API key and swap in whatever's
   currently available.
 - The mic recorder on the frontend needs HTTPS or `localhost` to access the microphone — fine for
-  local dev, but relevant if you deploy the frontend over plain HTTP.# MediAssist AI
+  local dev, but relevant if you deploy the frontend over plain HTTP.# DocMind AI
 
-MediAssist AI is a bilingual (Bengali / English) medical information assistant. It combines a
+DocMind AI is a bilingual (Bengali / English) medical information assistant. It combines a
 retrieval-augmented chat pipeline with a symptom-image checker, prescription OCR, a local medicine
 database, and a set of small clinical utilities (BMI, triage, hospital lookup, emergency numbers)
 behind a single React front end.
@@ -155,7 +155,7 @@ inserting a retrieval step before generation: relevant passages are pulled from 
 knowledge base first, and the model is instructed to answer from that retrieved text rather than
 from memory.
 
-For MediAssist AI this means every chat answer is traceable back to source material in the vector
+For DocMind AI this means every chat answer is traceable back to source material in the vector
 store, the knowledge base can be extended by dropping in new PDFs and re-indexing (no fine-tuning
 or retraining involved), and the model has a much narrower space to hallucinate in.
 
